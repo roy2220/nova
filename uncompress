@@ -1,0 +1,12 @@
+#!/usr/bin/env python3
+import io
+import sys
+
+import huffman
+import lzss
+
+
+f = io.BytesIO()
+huffman.decode_file(sys.stdin.buffer, f)
+f.seek(0, 0)
+lzss.decode_file(f, sys.stdout.buffer)
