@@ -34,7 +34,7 @@ def encode_file(input_file, output_file):
     input_file.seek(0, 0)
     code_table = _make_code_table(*tree)
     _encode_file(input_file, input_size, code_table, bit_stream)
-    bit_stream.write_bits(0, 0)
+    bit_stream.write_bits(0, 0, True)
 
 
 def decode_file(input_file, output_file):
