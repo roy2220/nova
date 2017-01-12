@@ -34,7 +34,6 @@ def encode_file(input_file, output_file):
     input_file.seek(0, 0)
     code_table = _make_code_table(*tree)
     _encode_file(input_file, input_size, code_table, bit_stream)
-    bit_stream.write_bits(0, 0, True)
 
 
 def decode_file(input_file, output_file):
@@ -118,6 +117,7 @@ def _load_tree(bit_stream):
             return tree_node_id
         else:
             tree_node_id = next_tree_node_id
+            assert(tree_node_id < 511)
             next_tree_node_id += 1
             tree_node_left_child_ids[tree_node_id] = make_tree()
             tree_node_right_child_ids[tree_node_id] = make_tree()
@@ -182,6 +182,8 @@ def _encode_file(input_file, input_size, code_table, bit_stream):
         i = input_file.read(1)[0]
         code, code_length = code_table[i]
         bit_stream.write_bits(code, code_length)
+
+    bit_stream.write_bits(0, 0, True)
 
 
 def _decode_file(bit_stream, tree_root_id, tree_node_left_child_ids, tree_node_right_child_ids

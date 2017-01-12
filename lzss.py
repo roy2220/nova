@@ -141,16 +141,11 @@ class _Dictionary(object):
 def encode_file(input_file, output_file):
     bit_stream = BitStream(output_file)
     _encode_file(input_file, bit_stream)
-    bit_stream.write_bits(0, 0, True)
 
 
 def decode_file(input_file, output_file):
     bit_stream = BitStream(input_file)
-
-    try:
-        _decode_file(bit_stream, output_file)
-    except EOFError as e:
-        pass
+    _decode_file(bit_stream, output_file)
 
 
 def _encode_file(input_file, bit_stream):
@@ -192,16 +187,21 @@ def _encode_file(input_file, bit_stream):
                 number_of_skips -= 1
 
             i = (i + 1) % WINDOW_LENGTH
-            dictionary.remove_word(j)
-            bytes_ = input_file.read(1)
 
-            if len(bytes_) >= 1:
-                window[j] = bytes_[0]
+            if data_length == MAX_WORD_LENGTH:
+                bytes_ = input_file.read(1)
 
-                if j < MAX_WORD_LENGTH:
-                    window[WINDOW_LENGTH + j] = bytes_[0]
+                if len(bytes_) >= 1:
+                    dictionary.remove_word(j)
+                    window[j] = bytes_[0]
 
-                j = (j + 1) % WINDOW_LENGTH
+                    if j < MAX_WORD_LENGTH:
+                        window[WINDOW_LENGTH + j] = bytes_[0]
+
+                    j = (j + 1) % WINDOW_LENGTH
+
+    bit_stream.write_bits(0, 1)
+    bit_stream.write_bits(i, M, True)
 
 
 def _decode_file(bit_stream, output_file):
@@ -234,19 +234,22 @@ def _decode_file(bit_stream, output_file):
             if number_of_bits < M:
                 raise EOFError()
 
-            bits, number_of_bits = bit_stream.read_bits(N)
+            if word_position == i:
+                return
+            else:
+                bits, number_of_bits = bit_stream.read_bits(N)
 
-            if number_of_bits < N:
-                raise EOFError()
+                if number_of_bits < N:
+                    raise EOFError()
 
-            word_length = bits + MIN_WORD_LENGTH
+                word_length = bits + MIN_WORD_LENGTH
 
-            for j in range(word_position, word_position + word_length):
-                byte = window[j]
-                output_file.write(bytes([byte]))
-                window[i] = byte
+                for j in range(word_position, word_position + word_length):
+                    byte = window[j]
+                    output_file.write(bytes([byte]))
+                    window[i] = byte
 
-                if i < MAX_WORD_LENGTH:
-                    window[WINDOW_LENGTH + i] = byte
+                    if i < MAX_WORD_LENGTH:
+                        window[WINDOW_LENGTH + i] = byte
 
-                i = (i + 1) % WINDOW_LENGTH
+                    i = (i + 1) % WINDOW_LENGTH
